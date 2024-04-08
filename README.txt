@@ -1,4 +1,6 @@
-A ferramenta educacional Q-Acadêmico – UFERSA visa possibilitar o acesso a um banco de questões por disciplina. O conteúdo utilizado é colaborativo e construtivo, no qual o professor de uma determinada disciplina disponibiliza um conjunto de questões, com gabarito, para que os alunos testem seus conhecimentos e aprendam com seus possíveis erros. O principal objetivo é fixar os conteúdos vistos em salas de aulas por meio de exercícios. Esta proposta foi construída para apresentação à Universidade Federal Rural do Semi- Árido, como requisito para cumprimento do componente curricular Trabalho de Conclusão de Curso II.
+A ferramenta educacional Q-Acadêmico – UFERSA visa possibilitar o acesso a um banco de questões por disciplina. O conteúdo utilizado é colaborativo e construtivo, no qual o professor de uma determinada disciplina
+disponibiliza um conjunto de questões, com gabarito, para que os alunos testem seus conhecimentos e aprendam com seus possíveis erros. O principal objetivo é fixar os conteúdos vistos em salas de aulas por meio de
+exercícios. Esta proposta foi construída para apresentação à Universidade Federal Rural do Semi- Árido, como requisito para cumprimento do componente curricular Trabalho de Conclusão de Curso II.
 
 
 1 Download to Project 
