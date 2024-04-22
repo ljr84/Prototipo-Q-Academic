@@ -3,6 +3,8 @@ disponibiliza um conjunto de questões, com gabarito, para que os alunos testem 
 exercícios. Esta proposta foi construída para apresentação à Universidade Federal Rural do Semi- Árido, como requisito para cumprimento do componente curricular Trabalho de Conclusão de Curso II.
 
 
+Instruções para utilização do projeto ; 
+
 1 Download to Project 
 2 Download Python 
 3 Download PIP Install 
