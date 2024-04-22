@@ -12,6 +12,5 @@ exercícios. Esta proposta foi construída para apresentação à Universidade F
 5 \$User\Prototipo-Q-Academic>python run.py
 6 Running on localhost > http://127.0.0.1:50001
 
-
-contact: samara.nascimento@ufersa.edu.br
-         lerinaldojr@gmail.com 
+Contato para duvidas os sugestões: samara.nascimento@ufersa.edu.br
+         l                         lerinaldojr@gmail.com 
