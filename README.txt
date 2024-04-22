@@ -14,5 +14,9 @@ Instruções para utilização do projeto ;
 5 \$User\Prototipo-Q-Academic>python run.py
 6 Running on localhost > http://127.0.0.1:50001
 
+Estrutura do codigo - Visual Studio Code: 
+
+![Estrutura Codigo - Visual Studio Code](https://github.com/ljr84/Prototipo-Q-Academic/assets/42380168/c3bb9e42-7067-4796-8523-74b38ab8dab8)
+
 Contato para duvidas os sugestões: samara.nascimento@ufersa.edu.br
                                    lerinaldojr@gmail.com 
