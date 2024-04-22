@@ -13,4 +13,5 @@ exercícios. Esta proposta foi construída para apresentação à Universidade F
 6 Running on localhost > http://127.0.0.1:50001
 
 
-contact: lerinaldojr@gmail.com 
+contact: samara.nascimento@ufersa.edu.br
+         lerinaldojr@gmail.com 
