@@ -1,7 +1,7 @@
 {% set menu_id = "menu-materia-listar" %}
-{% set content_title = "Q-Acadêmico - V0.0.1" %}
+{% set content_title = "Q-Acadêmico - UFERSA" %}
 {% extends "base/base.html" %}
-{% block title_page %}Q-Acadêmico{% endblock title_page %}
+{% block title_page %}Q-Acadêmico - UFERSA V 1.0{% endblock title_page %}
 
 
 {% block conteudo %}
@@ -72,17 +72,24 @@
                         <a href="/panel/materia/${element.id}/view" class="btn btn-sm btn-primary">
                             <i class="fas"></i> Visualizar
                         </a>
+                        <a href="/panel/materia/${element.id}/edit" class="btn btn-sm btn-primary">
+                            <i class="fas"></i> Editar
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
         `);
     }
+    var token = localStorage.getItem('token');
 
-    function loadMaterias(){
+    function loadMaterias2(){
         $.ajax({
             type: "GET",
             url: "/api/materia/list",
+            headers: {
+                'Authorization': token
+            },
             success: function(e, t, xhr){
                 e.data.forEach(element => {
                     append_to_modulo(element)
@@ -90,6 +97,24 @@
             },
             dataType: 'json'
         })
+    }
+
+    function loadMaterias(){
+        ajaxGet(
+            '/api/materia/list',
+            function(e){
+                if(e.error === true){
+                    notify_error('Aplica&ccedil;&atilde;o falhou carregar disciplinas');
+                }else{
+                    e.data.forEach(element => {
+                        append_to_modulo(element)
+                    });
+                }
+            },
+            function(x, status, error){
+                notify_error(x);
+            }
+        )
     }
 
     $(document).ready(function(){

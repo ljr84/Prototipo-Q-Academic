@@ -8,8 +8,6 @@ from app.core.database import(
     Base
 )
 
-
-
 if __name__ == '__main__':
     Base.metadata.create_all(bind=engine, checkfirst=True)
     db.create_all()

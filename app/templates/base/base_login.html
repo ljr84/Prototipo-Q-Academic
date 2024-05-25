@@ -7,21 +7,21 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AdminLTE 3 | Log in</title>
+    <title>Q-Acad&ecirc;mico - UFERSA | Entrar</title>
 
     <!-- Google Font: Source Sans Pro -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="/static/plugins/fontawesome-free/css/all.min.css">
-    <!-- icheck bootstrap -->
-    <link rel="stylesheet" href="/static/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+
     <!-- Theme style -->
-    <link rel="stylesheet" href="/static/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="https://adminlte.io/themes/v3/dist/css/adminlte.min.css?v=3.2.0">
+    <!-- <link rel="stylesheet" href="/static/dist/css/adminlte.min.css"> -->
 </head>
 <body class="hold-transition login-page">
 <div class="login-box">
     <div class="login-logo">
-        <a href="/static/index2.html"><b>Rifa</b>123</a>
+        <a href="/"><b>Q-Acad&ecirc;mico </b> 0.1</a>
     </div>
     <!-- /.login-logo -->
     <div class="card">
@@ -64,11 +64,11 @@
 
  
 
-            <p class="mb-1">
+            <!-- <p class="mb-1">
                 <a href="forgot-password.html">Esqueci minha senha</a>
-            </p>
+            </p> -->
             <p class="mb-0">
-                <a href="/register" class="text-center">Cadastrar</a>
+                <a href="/register" class="text-center">Criar Conta</a>
             </p>
         </div>
         <!-- /.login-card-body -->
@@ -82,36 +82,50 @@
 <script src="/static/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
 <!-- AdminLTE App -->
 <script src="/static/dist/js/adminlte.min.js"></script>
+<!-- UTILS -->
+<script src="/static/js/utils.js"></script>
 
 <script>
-    function checku(email, password){
-        $.ajax({
-            type: "POST",
-            url: 'http://127.0.0.1:5000/api/user/login',
-            data: {email: email, password: password},
-            success: function(e){
-                if(e.hasOwnProperty('access_token')){
-                    localStorage.setItem('token', e.access_token);
-                    window.location.replace('/panel/home');
+    function do_login(){
+        let email = $('#tx_email').val();
+        let senha = $('#tx_password').val();
+        var data = {username: email, password: senha};
+        ajaxPost(
+            '/api/user/login',
+            data,
+            function(e){
+                if(e.error === false){
+                    if(e.hasOwnProperty('access_token')){
+                        localStorage.setItem('token', e.access_token);
+                        noty_success_302('Login realizado, redirecionando...', '/');
+                    }else{
+                        notify_error('Sistema falhou carregar token de usu&aacute;rio');
+                    }
+                }else{
+                    notify_error('Sistema falhou realizar login');
                 }
-                console.log(`success - ${e}`);
-                console.log(`success - ${e.email}`);
             },
-            dataType: 'json'
-        });
+            function(x, status, error){
+                var msg_err = `Opa! O sistema retornou erro ! ${x}`
+                notify_error(msg_err);
+            }
+        );
     }
-
-
 
     $(document).on('click', '#btn_login', function(e){
         e.preventDefault();
-        let email = $('#tx_email').val();
-        let senha = $('#tx_password').val();
-        checku(email, senha);
-        console.log(`clico no login - ${email} - ${senha}`)
+        do_login()
     })
-</script>
 
+    $('input').keypress(function (e) {
+        if (e.which == 13) {
+            do_login()
+        }
+    });
+
+
+   
+</script>
 
 </body>
 </html>

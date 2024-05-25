@@ -18,10 +18,25 @@ from app.core.database import SessionLocal
 from app.models.sistema import(
     Disciplina,
     Assunto,
-    Pergunta
+    Pergunta,
+    UsuarioGrupo,
+    Usuario
 )
 
+import jwt
 
+from app.deps import(
+    check_jwt_token,
+    check_jwt_admin,
+    api_check_jwt_admin,
+    check_authenticated_user
+)
+
+from app.exceptions import(
+    MissingParams,
+    UsernameOrPasswordInvalid,
+    UserInactive
+)
 
 
 
@@ -44,10 +59,11 @@ def api_materia_list():
         return jsonify(error=True, message='no return')
 
 
-
+#
 
 
 @app.route('/api/materia/create', methods=["POST"])
+@check_authenticated_user()
 def api_materia_create():
     if request.method == "POST":
         name = request.form['name']
@@ -59,6 +75,8 @@ def api_materia_create():
             "description": description
         })
         if temp:
+            if isinstance(temp, int):
+                return jsonify(error=True, code='EXISTS', message='Disciplina j&aacute; cadastrada, redirecionando...', id=temp), 400
             data_out = {
                 'id': temp.id,
                 'name': temp.name,
@@ -68,7 +86,7 @@ def api_materia_create():
             }
             return jsonify(error=False, data=data_out)
         else:
-            return jsonify({"msg": "aplicacao falhou criar materia"}), 400
+            return jsonify(error=True, message="aplicacao falhou criar materia"), 400
     return jsonify(error=True)
 
 
@@ -89,6 +107,7 @@ def api_materia_edit(id_disciplina):
     if request.method == "POST":
         name = request.form.get("name", None)
         description = request.form.get("description", None)
+        icon = request.form.get("icon", None)
         if name or description:
             ss = SessionLocal()
             temp = Disciplina.list_by_id(session=ss, id=id_disciplina)
@@ -97,6 +116,8 @@ def api_materia_edit(id_disciplina):
                     temp.name = name
                 if description:
                     temp.description = description
+                if icon:
+                    temp.icon = icon
                 ss.commit()
                 return jsonify(error=False, data=temp)
             else:
@@ -264,9 +285,6 @@ def api_materia_assunto_questao_view(id_questao):
 
 
 
-
-
-
 @app.route('/api/materia/assunto/questao/<int:id_questao>/edit', methods=["POST"])
 def api_materia_assunto_questao_edit(id_questao):
     if request.method == "POST":
@@ -319,6 +337,191 @@ def api_materia_assunto_questao_delete(id_questao):
 
 
 
+
+
+
+@app.route('/api/user/<int:id_user>', methods=["GET"])
+@api_check_jwt_admin()
+def api_user_list_by_id(id_user):
+    temp = Usuario.list_by_id_moar(session=SessionLocal(), id=id_user)
+    if temp:
+        return jsonify(error=False, data=temp)
+    else:
+        return jsonify(error=True, message='no return')
+
+
+
+
+
+
+@app.route('/api/user/<int:id_user>/edit', methods=["POST"])
+@api_check_jwt_admin()
+def api_user_edit(id_user):
+    if request.method == "POST":
+        name = request.form.get('name', False)
+        email = request.form.get('email', False)
+        username = request.form.get('username', False)
+        group = request.form.get('group', False)
+        password = request.form.get('password', None)
+        status = request.form.get('status', None)
+        status = True if status.lower() == 'true' else False if status.lower() == 'false' else None
+        if name and email and username and group and status is not None:
+            app.logger.info(f'status {id_user} received == {status}')
+            sessao = SessionLocal()
+            temp = Usuario.list_by_id(session=sessao, id=id_user)
+            if temp:
+                temp.username = username
+                temp.email = email
+                temp.name = name
+                temp.group = group
+                temp.active = status
+                if password:
+                    temp.password = password
+                sessao.commit()
+                return jsonify(error=False, data=temp)
+            else:
+                return jsonify(error=True, message="aplicacao falhou editar usuario"), 400
+        else:
+            return jsonify(error=True, message='Missing params')
+    return jsonify(error=True, message='ops')
+
+
+
+
+
+
+@app.route('/api/user/create', methods=["POST"])
+@api_check_jwt_admin()
+def api_user_create():
+    if request.method == "POST":
+        name = request.form.get('name', False)
+        email = request.form.get('email', False)
+        username = request.form.get('username', False)
+        group = request.form.get('group', False)
+        password = request.form.get('password', False)
+        status = request.form.get('status', None)
+        status = True if status.lower() == 'true' else False if status.lower() == 'false' else None
+        if name and email and username and group and password and status is not None:
+            temp = Usuario.create(session=SessionLocal(), data={
+                    'username': username,
+                    'password': password,
+                    'group': group,
+                    'active': status,
+                    'name': name,
+                    'email': email
+                }
+            )
+            if temp:
+                data_out = {
+                    'id': temp.id,
+                    'username': temp.username,
+                    'group': temp.group,
+                    'active': temp.active,
+                    'name': temp.name,
+                    'email': temp.email,
+                    'date_created': temp.date_created,
+                }
+                return jsonify(error=False, data=data_out)
+            else:
+                return jsonify(error=True, message="aplicacao falhou criar usuario"), 400
+        else:
+            return jsonify(error=True, message='Missing params')
+    return jsonify(error=True, message='ops')
+
+
+
+
+
+
+
+@app.route('/api/user/list', methods=["GET"])
+@api_check_jwt_admin()
+def api_user_list():
+    temp = Usuario.list_all_moar(session=SessionLocal())
+    if temp:
+        return jsonify(error=False, data=temp)
+    else:
+        return jsonify(error=True, message='no return')
+
+
+
+@app.route('/api/user/login', methods=["POST"])
+def api_user_check():
+    username = request.form.get('username', None)
+    password = request.form.get('password', None)
+    if username and password:
+        temp = Usuario.validate_user(session=SessionLocal(), username=username, password=password)
+        if temp:
+            if not temp.active:
+                raise UserInactive("Usu&aacute;rio inativo")
+            data_token = {
+                'id': temp.id,
+                'username': temp.username,
+                'group': temp.group,
+                'admin': temp.UsuarioGrupo.admin,
+                'name': temp.name,
+                'email': temp.email
+            }
+            token = jwt.encode(data_token, app.config.get('MASTER_KEY', '123456'), algorithm="HS256")
+            response_obj = jsonify(error=False, access_token=token.decode())
+            response_obj.set_cookie('access_token', token.decode(), secure=True, httponly=True)
+            return response_obj
+        else:
+            raise UsernameOrPasswordInvalid("Nome de usu&aacute;rio/e-mail ou senha incorretos")
+    else:
+        return jsonify(error=True, message="missing params")
+
+
+#MissingParams
+#UsernameOrPasswordInvalid
+
+
+#
+
+
+@app.route('/api/user/public/create', methods=["POST"])
+def api_user_create_public():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        name = request.form["name"]
+        email = request.form["email"]
+        group = 'ROOT'
+        temp = Usuario.create(session=SessionLocal(), data={
+            'username': username,
+            'password': password,
+            'group': group,
+            'active': True,
+            'name': name,
+            'email': email
+        })
+        if temp:
+            data_out = {
+                'id': temp.id,
+                'username': temp.username,
+                'group': temp.group,
+                'active': temp.active,
+                'name': temp.name,
+                'email': temp.email,
+                'date_created': temp.date_created,
+            }
+            return jsonify(error=False, data=data_out)
+        else:
+            return jsonify({"msg": "aplicacao falhou criar usuario"}), 400
+    return jsonify(error=True)
+
+
+
+
+
+@app.route('/api/user/group/list', methods=["GET"])
+@api_check_jwt_admin()
+def api_user_group_list():
+    temp = UsuarioGrupo.list_all(session=SessionLocal())
+    if temp:
+        return jsonify(error=False, data=temp)
+    else:
+        return jsonify(error=True, message='no return')
 
 
 

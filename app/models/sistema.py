@@ -2,7 +2,9 @@ from sqlalchemy import(
     Column,
     Integer,
     String,
-    ForeignKey
+    ForeignKey,
+    event,
+    or_
 )
 from sqlalchemy.types import(
     Boolean,
@@ -21,6 +23,13 @@ from app.models.base import ModelBase
 
 from dataclasses import dataclass
 
+from app.exceptions import(
+    PermissionDenied,
+    PermissionDeniedAPI,
+    APIUserAlreadyExists,
+    DisciplinaAlreadyExists
+)
+
 
 @dataclass
 class Disciplina(ModelBase, Base):
@@ -31,6 +40,38 @@ class Disciplina(ModelBase, Base):
     description: str = Column(String(255))
     date_created: datetime = Column(DateTime, default=datetime.utcnow())
     assuntos = relationship('Assunto', backref='Disciplina')
+
+    @classmethod
+    def create(
+        cls: Type[Base],
+        session: Session,
+        data: dict
+    ):
+        name = data.get('name', False)
+        description = data.get('description', False)
+        if name and description:
+            check_disciplina = Disciplina.check_disciplina_exist(session=session, name=name, description=description)
+            if check_disciplina:
+                return check_disciplina.id
+            return super().create(session=session, data=data)
+        return False
+
+
+    @classmethod
+    def check_disciplina_exist(cls, session, name, description):
+        try:
+            temp = session.query(
+                cls
+            ).filter_by(
+                name = name
+            ).filter_by(
+                description = description
+            ).one()
+            if temp:
+                return temp
+        except Exception as err:
+            print(f'models.Disciplina.check_disciplina_exist exp - {err}')
+        return False
 
 
     @classmethod
@@ -120,6 +161,206 @@ class Pergunta(ModelBase, Base):
     assunto_id: int = Column(Integer, ForeignKey("Assunto.id"), nullable=False)
     date_created: datetime = Column(DateTime, default=datetime.utcnow())
     #alternative_answers = relationship('Resposta', backref='Pergunta')
+
+
+
+
+
+@dataclass
+class UsuarioGrupo(ModelBase, Base):
+    __tablename__ = "UsuarioGrupo"
+    id: int = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    description: str = Column(String(255))
+    key: str = Column(String(25), nullable=False, unique=True)
+    active: bool = Column(Boolean, nullable=False)
+    admin: bool = Column(Boolean, nullable=False, default=False)
+    usuarios = relationship('Usuario', backref='UsuarioGrupo')
+    date_created: datetime = Column(DateTime, default=datetime.utcnow())
+
+    def auto_create(target, connection, **kw):
+        default_groups = [
+            {
+                'description': 'Professor',
+                'key': 'G_PROF',
+                'active': True,
+                'admin': True,
+            },
+            {
+                'description': 'Aluno',
+                'key': 'G_ALUNO',
+                'active': True,
+                'admin': False
+            },
+            {
+                'description': 'Sistema',
+                'key': 'ROOT',
+                'active': True,
+                'admin': True
+            },
+        ]
+        for group in default_groups:
+            try:
+                connection.execute(
+                    target.insert(),
+                    group
+                )
+            except Exception as err:
+                print(f'models.sistema.UsuarioGrupo.auto_create exp - {err}')
+
+
+
+
+@dataclass
+class Usuario(ModelBase, Base):
+    __tablename__ = "Usuario"
+    id: int = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    username: str = Column(String(255), nullable=False)
+    password: str = Column(String(255), nullable=False)
+    name: str = Column(String(255))
+    email: str = Column(String(255), nullable=False)
+    active: bool = Column(Boolean, nullable=False)
+    group: str = Column(String(25), ForeignKey("UsuarioGrupo.key"), nullable=False)
+    date_created: datetime = Column(DateTime, default=datetime.utcnow())
+
+    @classmethod
+    def create(
+        cls: Type[Base],
+        session: Session,
+        data: dict
+    ):
+        username = data.get('username', False)
+        email = data.get('email', False)
+        cango = False
+        if username and email:
+            for item in [username, email]:
+                if Usuario.check_user_exist(session=session, search=item):
+                    raise APIUserAlreadyExists('xxxxxx')
+                    return False
+            return super().create(session=session, data=data)
+        return False
+        # obj = cls(**data)
+        # obj.date_created = datetime.utcnow()
+        # session.add(obj)
+        # session.commit()
+        # session.refresh(obj)
+        # return obj
+
+    @classmethod
+    def validate_user(cls, session, username, password):
+        try:
+            temp = session.query(
+                cls
+            ).filter_by(
+                password=password
+            ).filter(
+                (Usuario.username == username) | (Usuario.email == username)
+            ).one()
+            return temp
+        except Exception as err:
+            print(f'models.Usuario.validate_user exp - {err}')
+        return False
+
+    @classmethod
+    def check_user_exist(cls, session, search):
+        try:
+            temp = session.query(cls) \
+                .filter(
+                    (Usuario.username == search) | (Usuario.email == search)
+                ).one()
+            if temp:
+                return True
+        except Exception as err:
+            print(f'models.Usuario.check_user_exist exp - {err}')
+        return False
+
+    @classmethod
+    def list_all_moar(cls, session):
+        try:
+            temp = session.query(cls).all()
+            if temp:
+                data = []
+                for item in temp:
+                    data.append(
+                        {
+                            'id': item.id,
+                            'username': item.username,
+                            'name': item.name,
+                            'email': item.email,
+                            'active': item.active,
+                            'group': item.group,
+                            'date_created': item.date_created,
+                            'group_data': {
+                                'id': item.UsuarioGrupo.id,
+                                'description': item.UsuarioGrupo.description,
+                                'key': item.UsuarioGrupo.key,
+                                'admin': item.UsuarioGrupo.admin
+                            }
+                        }
+                    )
+                return data
+        except Exception as err:
+            print(f'models.sistema.Usuario.list_all_moar exp - {err}')
+        return False
+
+    @classmethod
+    def list_by_id_moar(cls, session, id):
+        try:
+            temp = session.query(cls).filter_by(id=id).first()
+            if temp:
+                data = {}
+                data.update(
+                    {
+                        'id': temp.id,
+                        'username': temp.username,
+                        'name': temp.name,
+                        'email': temp.email,
+                        'active': temp.active,
+                        'group': temp.group,
+                        'date_created': temp.date_created,
+                        'group_data': {
+                            'id': temp.UsuarioGrupo.id,
+                            'description': temp.UsuarioGrupo.description,
+                            'key': temp.UsuarioGrupo.key,
+                            'admin': temp.UsuarioGrupo.admin
+                        }
+                    }
+                )
+                return data
+        except Exception as err:
+            print(f'models.sistema.Usuario.list_by_id_moar exp - {err}')
+        return False
+
+    def auto_create(target, connection, **kw):
+        default_users = [
+            {
+                'username': 'superadmin',
+                'password': '123456',
+                'active': True,
+                'group': 'ROOT',
+                'name': 'admin',
+                'email': 'root@me.com'
+            },
+        ]
+        for user in default_users:
+            try:
+                connection.execute(
+                    target.insert(),
+                    user
+                )
+            except Exception as err:
+                print(f'models.sistema.UsuarioGrupo.auto_create exp - {err}')
+
+
+
+
+
+
+event.listen(UsuarioGrupo.__table__, 'after_create', UsuarioGrupo.auto_create)
+event.listen(Usuario.__table__, 'after_create', Usuario.auto_create)
+
+
+
+
 
 
 

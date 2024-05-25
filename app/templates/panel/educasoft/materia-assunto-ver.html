@@ -15,13 +15,11 @@
 }
 
 .select-action {
-    position: absolute;
     display: none;
 }
 
 .select-action.show {
     display: inline-block;
-    position: absolute;
 }
 
 
@@ -57,7 +55,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body table-responsive">
                                 <!-- TABLE QUESTOES - ASSUNTOS -->
                                 <table class="table table-striped" id="tb_questoes" name="tb_questoes">
                                     <thead>
@@ -65,7 +63,6 @@
                                             <th>#</th>
                                             <th>Quest&atilde;o</th>
                                             <th>Resposta</th>
-                                            <th> </th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -80,6 +77,9 @@
                                 </button>
                                 <button type="button" id="btn_validar_respostas" name="btn_validar_respostas" disabled="disabled" class="btn btn-info">
                                     Validar Respostas
+                                </button>
+                                <button type="button" id="btn_cancel" name="btn_cancel" onclick="history.back()" class="btn btn-info">
+                                    Cancelar
                                 </button>
                             </div>
                             <!-- /.card-footer-->
@@ -115,7 +115,6 @@ function append_to_table(element, index){
                     <option value="false">Falso</option>
                 </select> 
             </td>
-            <td> </td>
         </tr>
     `);
 }

@@ -1,6 +1,5 @@
 from datetime import timedelta
 
-
 class Config:
     #FLASK_ENV='development'
     #ENV='development'
