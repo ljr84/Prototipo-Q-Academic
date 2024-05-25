@@ -1,0 +1,198 @@
+{% set menu_id = "menu-materia-listar" %}
+
+{% set content_title = "Q-Acadêmico" %}
+{% extends "base/base.html" %}
+{% block title_page %}Q-Acadêmico{% endblock title_page %}
+
+
+{% block rendercss %}
+
+<style>
+
+
+    .table-cell {
+    position: relative;
+}
+
+.select-action {
+    position: absolute;
+    display: none;
+}
+
+.select-action.show {
+    display: inline-block;
+    position: absolute;
+}
+
+
+.row-resposta-correta{
+    background-color: #28a745 !important;
+}
+
+.row-resposta-errada{
+    background-color: #dc3545 !important;
+}
+
+
+</style>
+
+{% endblock rendercss %}
+
+
+{% block conteudo %}
+
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        <!-- Default box -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title" id="card_title" name="card_title">Quest&otilde;es do assunto ${????assunto}</h3>
+
+                                <div class="card-tools">
+                                    <button type="button" onclick="history.back()" class="btn btn-tool">
+                                        <i class="fa fa-arrow-left"></i> Voltar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <!-- TABLE QUESTOES - ASSUNTOS -->
+                                <table class="table table-striped" id="tb_questoes" name="tb_questoes">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Quest&atilde;o</th>
+                                            <th>Resposta</th>
+                                            <th> </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.card-body -->
+                            <div class="card-footer">
+                                <button type="button" id="btn_responder" name="btn_responder" class="btn btn-primary">
+                                    Responder Perguntas
+                                </button>
+                                <button type="button" id="btn_validar_respostas" name="btn_validar_respostas" disabled="disabled" class="btn btn-info">
+                                    Validar Respostas
+                                </button>
+                            </div>
+                            <!-- /.card-footer-->
+                        </div>
+                        <!-- /.card -->
+                    </div>
+                </div>
+            </div>
+
+        </section>
+        <!-- /.content -->
+    {% endblock conteudo %}
+
+
+{% block renderjs %}
+<script>
+
+    
+var id_from_flask = {{ id|default("null") }};
+
+
+
+
+function append_to_table(element, index){
+    $('#tb_questoes tbody').append(`
+        <tr>
+            <td>${index+1}#</td>
+            <td>${element.question}</td>
+            <td class="table-cell">
+                <select data-question-id="${element.id}" data-question-validation="${element.correct}" class="select-action" id="cb_validate" name="cb_validate">
+                    <option>Selecione</option>
+                    <option value="true">Verdadeiro</option>
+                    <option value="false">Falso</option>
+                </select> 
+            </td>
+            <td> </td>
+        </tr>
+    `);
+}
+
+
+
+
+
+function load_assunto_by_id(id){
+    $.ajax({
+        type: "GET",
+        url: `/api/materia/assunto/${id}`,
+        success: function(e, t, xhr){
+            console.log(`name= ${e.data.name} --- dscr = ${e.data.description}`);
+
+            if(e.data.disciplina_data){
+                $('#card_title').empty().append(`
+                    Quest&otilde;es - ${e.data.disciplina_data.description} - ${e.data.disciplina_data.name} - ${e.data.description}
+                `);
+                // add_bradcumb(e.data.disciplina_data.description, `/panel/materia/${e.data.disciplina_data.id}/view`, false);
+
+                //*****
+
+                add_bradcumb(e.data.disciplina_data.description, `/panel/materia/${e.data.disciplina_data.id}/view`, false);
+                add_bradcumb(`[QUIZ] ${e.data.description}`, '', true);
+
+                //*****
+
+
+            }
+
+            e.data.questions.forEach((element, index) => {
+                append_to_table(element, index)
+            })
+        },
+        dataType: 'json'
+    })
+}
+
+
+
+
+
+
+$(document).ready(function(){
+    load_assunto_by_id({{ id }})
+})
+
+
+    $(document).on('click', '#btn_responder', function(e){
+        e.preventDefault();
+        $(".select-action").toggleClass("show");
+        if($('#btn_validar_respostas').prop('disabled') === true){
+            $('#btn_validar_respostas').prop('disabled', false);
+        }else{
+            $('#btn_validar_respostas').prop('disabled', true);
+        }
+    });
+
+
+
+    $(document).on('click', '#btn_validar_respostas', function(e){
+        e.preventDefault();
+        $.each($('.select-action'), function (i, e) { 
+            var resposta = $(this).val();
+            var resposta_sistema = $(this).attr('data-question-validation');
+            if (resposta == resposta_sistema){
+                $(this).closest('tr').removeClass().addClass('row-resposta-correta');
+                //$($('.select-action')[1]).closest('tr')
+                //$(this).parent()
+            }else{
+                $(this).closest('tr').removeClass().addClass('row-resposta-errada');
+            }
+        })
+    })
+
+
+</script>
+
+{% endblock renderjs %}
